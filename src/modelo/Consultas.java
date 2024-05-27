@@ -3,139 +3,251 @@ package modelo;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 
-import controlador.Conexion;
-
 public class Consultas {
 
-    // Método para cargar todos los productos desde la base de datos y mostrarlos en la tabla
-    public static void cargarProductos(Connection connection, DefaultTableModel model) {
+    // Método para cargar los productos desde la base de datos y mostrarlos en la tabla
+    public void cargarProductos(Connection conexion, DefaultTableModel modelo) {
         try {
-            // Consulta SQL para seleccionar todos los productos
-            String consulta = "SELECT codigo, nombre, precio, cantidad FROM producto";
-            // Prepara la consulta
-            PreparedStatement ps = connection.prepareStatement(consulta);
-            // Ejecuta la consulta y obtener los resultados
-            ResultSet rs = ps.executeQuery();
-            // Carga los resultados en la tabla
-            cargarTabla(rs, model);
+            String sql = "SELECT * FROM producto";
+            PreparedStatement sentencia = conexion.prepareStatement(sql);
+            ResultSet resultado = sentencia.executeQuery();
+
+            // Limpia la tabla antes de cargar nuevos datos
+            modelo.setRowCount(0);
+
+            // Llena la tabla con los datos de la base de datos
+            while (resultado.next()) {//resultado.next trae una fila completa de la tabla 
+                String codigo = resultado.getString("codigo");
+                String nombre = resultado.getString("nombre");
+                double precio = resultado.getDouble("precio");
+                int cantidad = resultado.getInt("cantidad");
+                modelo.addRow(new Object[]{codigo, nombre, precio, cantidad});
+            }
+
+            // Cierra el statement y el result set
+            sentencia.close();
+            resultado.close();
+
         } catch (SQLException e) {
-            // Capturar y manejar cualquier excepción SQL que ocurra
-            System.out.println("Error al cargar productos: " + e);
+            e.printStackTrace();
         }
     }
 
-    // Método para buscar un producto por nombre y mostrarlo en la tabla
-    public static void buscarProducto(Connection connection, String nombre, DefaultTableModel model) {
-        if (!nombre.isEmpty()) {
-            try {
-                // Consulta SQL para buscar un producto por su nombre
-                String consulta = "SELECT codigo, nombre, precio, cantidad FROM producto WHERE nombre=?";
-                // Preparar la consulta con un parámetro (nombre del producto)
-                PreparedStatement ps = connection.prepareStatement(consulta);
-                ps.setString(1, nombre); // Establecer el valor del parámetro
-                // Ejecutar la consulta y obtener los resultados
-                ResultSet rs = ps.executeQuery();
-                // Cargar los resultados en la tabla
-                cargarTabla(rs, model);
-            } catch (SQLException e) {
-                // Capturar y manejar cualquier excepción SQL que ocurra
-                System.out.println("Error al buscar producto: " + e);
-            }
-        }
-    }
-
-    // Método privado para cargar los resultados de la consulta en la tabla
-    private static void cargarTabla(ResultSet rs, DefaultTableModel model) throws SQLException {
-        // Limpia el modelo de la tabla antes de agregar nuevos datos
-        model.setRowCount(0);
-        // Obtiene metadatos de los resultados para obtener el número de columnas
-        ResultSetMetaData rsMd = rs.getMetaData();
-        int cantidadColumnas = rsMd.getColumnCount();
-        // Recorre los resultados y agregar cada fila a la tabla
-        while (rs.next()) {
-            Object[] fila = new Object[cantidadColumnas];
-            // Llenar la fila con los datos de cada columna
-            for (int i = 0; i < cantidadColumnas; i++) {
-                fila[i] = rs.getObject(i + 1);
-            }
-            // Agregar la fila al modelo de la tabla
-            model.addRow(fila);
-        }
-    }
-
-    // Método para verificar si el registro existe en la base de datos, con el código que le llega por parámetro
-    public static boolean verificarExistenciaRegistro(Connection connection, String codigo) {
+    // Método para buscar un producto por su código en la base de datos
+    public boolean buscarProducto(Connection conexion, String codigoProducto, DefaultTableModel modelo) {
         try {
-            // Consulta SQL para verificar la existencia del registro con el código indicado
-            String consulta = "SELECT COUNT(*) FROM producto WHERE codigo=?";
-            // Prepara la consulta con un parámetro (código del producto)
-            PreparedStatement ps = connection.prepareStatement(consulta);
-            ps.setString(1, codigo); // Establecer el valor del parámetro
-            // Ejecuta la consulta y obtiene los resultados
-            ResultSet rs = ps.executeQuery();
-            // Obtiene el resultado del conteo
-            if (rs.next()) {
-                int count = rs.getInt(1);
-                return count > 0; // Devolver true si el conteo es mayor que cero (el registro existe)
+            String sql = "SELECT * FROM producto WHERE codigo = ?";
+            PreparedStatement sentencia = conexion.prepareStatement(sql);
+            sentencia.setString(1, codigoProducto);
+            ResultSet resultado = sentencia.executeQuery();
+
+            // Limpia la tabla antes de cargar nuevos datos
+            modelo.setRowCount(0);
+
+            // Llena la tabla con los datos del producto encontrado (si existe)
+            boolean productoEncontrado = false;
+            while (resultado.next()) {
+                String codigo = resultado.getString("codigo");
+                String nombre = resultado.getString("nombre");
+                double precio = resultado.getDouble("precio");
+                int cantidad = resultado.getInt("cantidad");
+                modelo.addRow(new Object[]{codigo, nombre, precio, cantidad});
+                productoEncontrado = true;
             }
+
+            // Cierra el statement y el result set
+            sentencia.close();
+            resultado.close();
+
+            return productoEncontrado;
+
         } catch (SQLException e) {
-            // Capturar y manejar cualquier excepción SQL que ocurra
-            System.out.println("Error al verificar existencia del registro: " + e);
+            e.printStackTrace();
+            return false;
         }
-        return false; // Devolver false si ocurre algún error o si el conteo es cero (el registro no existe)
     }
 
-    // Método para eliminar un registro de la base de datos y limpiar la tabla
-    public static boolean eliminarRegistro(Connection connection, String codigo, DefaultTableModel model) {
+    // Método para verificar si un registro con el código especificado existe en la base de datos
+    public boolean verificarExistenciaRegistro(Connection conexion, String codigo) {
         try {
-            // Consulta SQL para eliminar el registro con el código proporcionado
-            String consulta = "DELETE FROM producto WHERE codigo=?";
-            // Preparar la consulta con un parámetro (código del producto)
-            PreparedStatement ps = connection.prepareStatement(consulta);
-            ps.setString(1, codigo); // Establecer el valor del parámetro
-            // Ejecutar la consulta
-            int filasAfectadas = ps.executeUpdate();
-            // Comprobar si se eliminó correctamente (si se afectó una fila)
+            String sql = "SELECT * FROM producto WHERE codigo = ?";
+            PreparedStatement sentencia = conexion.prepareStatement(sql);
+            sentencia.setString(1, codigo);
+            ResultSet resultado = sentencia.executeQuery();
+
+            // Verifica si se encontró algún registro con el código especificado
+            boolean existeRegistro = resultado.next();
+
+            // Cierra el statement y el result set
+            sentencia.close();
+            resultado.close();
+
+            return existeRegistro;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    // Método para eliminar un registro de la base de datos por su código
+    public boolean eliminarRegistro(Connection conexion, String codigo, DefaultTableModel modelo) {
+        try {
+            String sql = "DELETE FROM producto WHERE codigo = ?";
+            PreparedStatement sentencia = conexion.prepareStatement(sql);
+            sentencia.setString(1, codigo);
+
+            // Ejecuta la consulta para eliminar el registro
+            int filasAfectadas = sentencia.executeUpdate();
+
+            // Cierra el statement
+            sentencia.close();
+
+            // Actualiza la tabla si se eliminó el registro correctamente
             if (filasAfectadas > 0) {
-                // Limpiar la tabla
-                model.setRowCount(0);
-                return true; // Se eliminó exitosamente
+                cargarProductos(conexion, modelo);
+                return true;
+            } else {
+                return false;
             }
+
         } catch (SQLException e) {
-            // Capturar y manejar cualquier excepción SQL que ocurra
-            System.out.println("Error al eliminar registro: " + e);
+            e.printStackTrace();
+            return false;
         }
-        return false; // No se pudo eliminar el registro
     }
 
-    // Método para agregar un registro nuevo a la tabla
-    public static boolean agregarRegistro(Connection connection, String codigo, String nombre, double precio,
-            int cantidad) {
+    // Método para guardar los cambios realizados en la tabla en la base de datos
+    public void guardarCambios(Connection conexion, DefaultTableModel modelo) {
         try {
-            // Consulta SQL para insertar un nuevo registro
-            String consulta = "INSERT INTO producto (codigo, nombre, precio, cantidad) VALUES (?, ?, ?, ?)";
-            // Preparar la consulta con los parámetros (código, nombre, precio, cantidad)
-            PreparedStatement ps = connection.prepareStatement(consulta);
-            ps.setString(1, codigo);
-            ps.setString(2, nombre);
-            ps.setDouble(3, precio);
-            ps.setInt(4, cantidad);
-            // Ejecutar la consulta
-            int filasAfectadas = ps.executeUpdate();
-            // Comprobar si se agregó correctamente (si se afectó una fila)
-            if (filasAfectadas > 0) {
-                return true; // Se agregó exitosamente
+            // Obtener el número de filas en el modelo
+            int cantidadFilas = modelo.getRowCount();
+
+            // Verifica si se han realizado cambios en la tabla
+            if (cantidadFilas == 0) {
+                JOptionPane.showMessageDialog(null, "No hay cambios pendientes.");
+                return; // No hay cambios, salir del método
             }
-        } catch (SQLException e) {
-            // Capturar y manejar cualquier excepción SQL que ocurra
-            System.out.println("Error al agregar registro: " + e);
+
+            // Recorre cada fila del modelo para guardar los cambios
+            for (int i = 0; i < cantidadFilas; i++) {
+                String codigo = (String) modelo.getValueAt(i, 0);
+                String nombre = (String) modelo.getValueAt(i, 1);
+                double precio = (Double) modelo.getValueAt(i, 2);
+                int cantidad = (Integer) modelo.getValueAt(i, 3);
+
+                // Verificar si el código existe en la base de datos antes de actualizar el registro
+                boolean existeRegistro = verificarExistenciaRegistro(conexion, codigo);
+                if (existeRegistro) {
+                    int confirmacion = JOptionPane.showConfirmDialog(null, "El código ingresado ya existe en la base de datos. ¿Desea sobrescribir los datos del registro existente?", "Confirmar actualización", JOptionPane.YES_NO_OPTION);
+                    if (confirmacion == JOptionPane.NO_OPTION) {
+                        continue; // Saltar esta iteración y pasar al siguiente registro
+                    }
+                }
+
+                // Actualizar el registro en la base de datos
+                String sql = "UPDATE producto SET nombre = ?, precio = ?, cantidad = ? WHERE codigo = ?";
+                PreparedStatement sentencia = conexion.prepareStatement(sql);
+                sentencia.setString(1, nombre);
+                sentencia.setDouble(2, precio);
+                sentencia.setInt(3, cantidad);
+                sentencia.setString(4, codigo);
+
+                // Ejecutar la consulta de actualización
+                sentencia.executeUpdate();
+
+                // Cerrar el statement
+                sentencia.close();
+            }
+
+            // Actualizar la tabla después de guardar los cambios en la base de datos
+            cargarProductos(conexion, modelo);
+
+            // Mostrar mensaje de éxito
+            JOptionPane.showMessageDialog(null, "Cambios guardados exitosamente.");
+
+        } catch (SQLException e) { // Capturar cualquier excepción
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Error al guardar los cambios: " + e.getMessage());
         }
-        return false; // No se pudo agregar el registro
     }
+
+    // Método para agregar un nuevo registro a la base de datos
+    public boolean agregarRegistro(Connection conexion, String codigo, String nombre, double precio, int cantidad) {
+        try {
+            // Verificar si el código ya existe en la base de datos
+            boolean existeRegistro = verificarExistenciaRegistro(conexion, codigo);
+            if (existeRegistro) {
+                JOptionPane.showMessageDialog(null, "El código ingresado ya existe en la base de datos. Por favor, ingresa un código diferente.");
+                return false;
+            }
+
+            // Insertar el nuevo registro en la base de datos
+            String sql = "INSERT INTO producto (codigo, nombre, precio, cantidad) VALUES (?, ?, ?, ?)";
+            PreparedStatement sentencia = conexion.prepareStatement(sql);
+            sentencia.setString(1, codigo);
+            sentencia.setString(2, nombre);
+            sentencia.setDouble(3, precio);
+            sentencia.setInt(4, cantidad);
+
+            int filasAfectadas = sentencia.executeUpdate();
+
+            // Cerrar el statement
+            sentencia.close();
+
+            // Retornar true si se insertó el registro correctamente
+            return filasAfectadas > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Error al intentar agregar el registro: " + e.getMessage());
+            return false;
+        }
+    }
+
+    // Método para actualizar un dato específico en la base de datos para un registro dado
+    public void actualizarDatoEnBD(Connection conexion, String codigo, String nuevoCodigo, int columna, String nuevoValor) {
+        try {
+            String columnaBD = null;
+            switch (columna) {
+                case 0: // La columna 0 es el código
+                    columnaBD = "codigo";
+                    break;
+                case 1: // Si la columna es la de nombre
+                    columnaBD = "nombre";
+                    break;
+                case 2: // Si la columna es la de precio
+                    columnaBD = "precio";
+                    break;
+                case 3: // Si la columna es la de cantidad
+                    columnaBD = "cantidad";
+                    break;
+                default:
+                    // No hacemos nada si la columna no es válida
+                    return;
+            }
+            
+            // Verifica si el nuevo código ya está en uso
+            if (!codigo.equals(nuevoCodigo) && verificarExistenciaRegistro(conexion, nuevoCodigo)) {
+                JOptionPane.showMessageDialog(null, "El código ingresado ya está en uso. Por favor, ingresa un código diferente.");
+                return; // Salir del método sin actualizar el registro
+            }
+
+            // Actualizar el registro en la base de datos
+            String sql = "UPDATE producto SET " + columnaBD + " = ? WHERE codigo = ?";
+            PreparedStatement sentencia = conexion.prepareStatement(sql);
+            sentencia.setString(1, nuevoValor);
+            sentencia.setString(2, codigo);
+            sentencia.executeUpdate();
+            sentencia.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
 }

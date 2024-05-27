@@ -104,7 +104,7 @@ public class DatosAdministrador extends JFrame implements ActionListener {
                 // Crear una instancia de la conexión
                 Conexion conexion = new Conexion(usuario, contraseña, baseDeDatos);
 
-                // Obtener la conexión
+                // Obtener la conexión de la clase conexion
                 Connection connection = conexion.obtenerConexion();
 
                 // Si se obtiene la conexión, abrir la ventana Tabla

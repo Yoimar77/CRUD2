@@ -1,4 +1,5 @@
 package vista;
+
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
@@ -38,7 +39,7 @@ public class RegistroTabla extends JFrame implements ActionListener {
         this.username = username;
         this.password = password;
         this.baseDeDatos = baseDeDatos;
-        // Crea la conexión a la base de datos
+        // Crea la conexión a la base de datos, de la clase conexion
         try {
             Conexion co = new Conexion(username, password, baseDeDatos);
             connection = co.obtenerConexion();
@@ -121,17 +122,21 @@ public class RegistroTabla extends JFrame implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnEnviar) {
+            //capturo los datos ingresados en la caja de texto y los guardo en diferentes variables
             String codigo = textFieldCodigo.getText();
             String nombre = textFieldNombre.getText();
             double precio = Double.parseDouble(textFieldPrecio.getText());
             int cantidad = Integer.parseInt(textFieldCantidad.getText());
 
-            // Verificar si el código ya existe en la base de datos
-            boolean codigoExistente = Consultas.verificarExistenciaRegistro(connection, codigo);
+            // Creamos una instancia de Consultas para utilizar sus métodos
+            Consultas consultas = new Consultas();
+            
+            // Verifica si el código ya existe en la base de datos
+            boolean codigoExistente = consultas.verificarExistenciaRegistro(connection, codigo);
 
             if (!codigoExistente) {
                 // El código no existe, entonces se puede agregar el registro
-                boolean exito = Consultas.agregarRegistro(connection, codigo, nombre, precio, cantidad);
+                boolean exito = consultas.agregarRegistro(connection, codigo, nombre, precio, cantidad);
                 if (exito) {
                     // Limpiar las cajas de texto
                     textFieldCodigo.setText("");
@@ -149,7 +154,7 @@ public class RegistroTabla extends JFrame implements ActionListener {
             }
         }
         if (e.getSource() == btnVolver) {
-        	//se instancia tabla
+            //se instancia tabla
             Tabla tabla = new Tabla(username,password,baseDeDatos);
             tabla.setVisible(true);
             dispose();

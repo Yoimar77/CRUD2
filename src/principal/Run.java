@@ -1,3 +1,4 @@
+//clase run de mi paquete principal
 package principal;
 
 import vista.DatosAdministrador;
