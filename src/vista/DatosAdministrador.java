@@ -24,7 +24,7 @@ public class DatosAdministrador extends JFrame implements ActionListener {
 
     private JPanel contentPane;
     private JTextField textFieldUsuario;
-    private JPasswordField passwordFieldContraseña;
+    private JPasswordField passwordFieldContrasenia;
     private JTextField textFieldBaseDeDatos;
     private JButton btnAceptar,btnSalir;
 
@@ -47,9 +47,9 @@ public class DatosAdministrador extends JFrame implements ActionListener {
         contentPane.add(textFieldUsuario);
         textFieldUsuario.setColumns(10);
 
-        passwordFieldContraseña = new JPasswordField();
-        passwordFieldContraseña.setBounds(212, 80, 176, 20);
-        contentPane.add(passwordFieldContraseña);
+        passwordFieldContrasenia = new JPasswordField();
+        passwordFieldContrasenia.setBounds(212, 80, 176, 20);
+        contentPane.add(passwordFieldContrasenia);
 
         JLabel lblNewLabel = new JLabel("USUARIO:");
         lblNewLabel.setFont(new Font("Tahoma", Font.BOLD, 11));
@@ -98,18 +98,18 @@ public class DatosAdministrador extends JFrame implements ActionListener {
             try {
                 // Obtener los valores de usuario, contraseña y nombre de la base de datos
                 String usuario = textFieldUsuario.getText();
-                String contraseña = new String(passwordFieldContraseña.getPassword());
+                String contrasenia = new String(passwordFieldContrasenia.getPassword());
                 String baseDeDatos = textFieldBaseDeDatos.getText();
 
                 // Crear una instancia de la conexión
-                Conexion conexion = new Conexion(usuario, contraseña, baseDeDatos);
+                Conexion conexion = new Conexion(usuario, contrasenia, baseDeDatos);
 
                 // Obtener la conexión de la clase conexion
                 Connection connection = conexion.obtenerConexion();
 
                 // Si se obtiene la conexión, abrir la ventana Tabla
                 if (connection != null) {
-                    Tabla tabla = new Tabla(usuario, contraseña, baseDeDatos);
+                    Tabla tabla = new Tabla(usuario, contrasenia, baseDeDatos);
                     tabla.setVisible(true);
 
                     // Cerrar esta ventana DatosAdministrador
